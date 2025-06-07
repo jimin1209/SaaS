@@ -111,7 +111,6 @@ def test_ensure_status_column_updates_wrong_type():
         status_prop = call_args[1]["properties"]["상태"]["select"]
         assert status_prop["default"]["name"] == "완료"
 
-
 @pytest.mark.asyncio
 async def test_create_dummy_data_select_and_relation():
     """select 및 relation 타입이 올바르게 매핑되는지 확인"""
@@ -149,7 +148,6 @@ async def test_create_dummy_data_select_columns():
         props = mock_notion.pages.create.call_args_list[0].kwargs["properties"]
         assert props["부서"]["select"]["name"] == "개발팀"
         assert props["직급"]["select"]["name"] == "사원"
-
 
 @pytest.mark.asyncio
 async def test_create_dummy_data_replaces_dummy_user():

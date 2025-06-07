@@ -73,5 +73,38 @@ class SlackLogHandler(logging.Handler):
         except Exception as exc:  # pragma: no cover - network errors
             log.error("SlackLogHandler 오류: %s", exc)
 
+
+class SlackLogHandler(logging.Handler):
+    """Logging handler that posts records to Slack via webhook."""
+
+    EMOJIS = {
+        logging.DEBUG: "🔍",
+        logging.INFO: "✅",
+        logging.WARNING: "⚠️",
+        logging.ERROR: "❌",
+        logging.CRITICAL: "💥",
+    }
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.webhook = WebhookClient(SLACK_WEBHOOK_URL) if SLACK_WEBHOOK_URL else None
+        self.error_webhook = (
+            WebhookClient(SLACK_ERROR_WEBHOOK_URL)
+            if SLACK_ERROR_WEBHOOK_URL
+            else None
+        )
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if not self.webhook:
+            return
+        prefix = self.EMOJIS.get(record.levelno, "")
+        text = f"{prefix} {self.format(record)}"
+        try:
+            self.webhook.send(text=text)
+            if record.levelno >= logging.ERROR and self.error_webhook:
+                self.error_webhook.send(text=text)
+        except Exception as exc:  # pragma: no cover - network errors
+            log.error("SlackLogHandler failed: %s", exc)
+
 # Example usage:
 # await send_message("hello")
