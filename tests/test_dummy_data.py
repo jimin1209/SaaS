@@ -109,3 +109,38 @@ def test_ensure_status_column_updates_wrong_type():
         call_args = mock_notion.databases.update.call_args
         status_prop = call_args[1]["properties"]["상태"]["select"]
         assert status_prop["default"]["name"] == "완료"
+
+
+@pytest.mark.asyncio
+async def test_create_dummy_data_select_and_relation():
+    """select 및 relation 타입이 올바르게 매핑되는지 확인"""
+
+    with patch.object(db_utils, "notion") as mock_notion:
+        mock_notion.pages.create = MagicMock()
+        mock_notion.databases.retrieve.return_value = {
+            "properties": {"상태": {"type": "select"}}
+        }
+
+        await db_utils.create_dummy_data("db", "휴가 및 출장 증빙서류")
+
+        call = mock_notion.pages.create.call_args_list[0]
+        props = call.kwargs["properties"]
+        assert "관련 요청" in props
+        assert props["관련 요청"]["relation"] == [{"id": "dummy-page"}]
+
+
+@pytest.mark.asyncio
+async def test_create_dummy_data_select_columns():
+    """select 타입 컬럼이 문자열 값으로 생성되는지 확인"""
+
+    with patch.object(db_utils, "notion") as mock_notion:
+        mock_notion.pages.create = MagicMock()
+        mock_notion.databases.retrieve.return_value = {
+            "properties": {"상태": {"type": "select"}}
+        }
+
+        await db_utils.create_dummy_data("db", "직원목록")
+
+        props = mock_notion.pages.create.call_args_list[0].kwargs["properties"]
+        assert props["부서"]["select"]["name"] == "개발팀"
+        assert props["직급"]["select"]["name"] == "사원"
