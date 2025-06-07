@@ -12,7 +12,7 @@ async def test_trip_date_parsing():
     with patch.object(db_utils, "notion") as mock_notion:
         mock_notion.pages.create = MagicMock()
         mock_notion.databases.retrieve.return_value = {
-            "properties": {"상태": {"type": "status"}}
+            "properties": {"상태": {"type": "select"}}
         }
 
         await db_utils.create_dummy_data("db_id", "출장 요청서")
@@ -75,7 +75,7 @@ def test_ensure_status_column_creates_missing():
 
         call_args = mock_notion.databases.update.call_args
         assert call_args[0][0] == "db1"
-        status_prop = call_args[1]["properties"]["상태"]["status"]
+        status_prop = call_args[1]["properties"]["상태"]["select"]
         names = [o["name"] for o in status_prop["options"]]
         assert names == ["미처리", "진행중", "완료", "반려"]
         assert status_prop["default"]["name"] == "미처리"
@@ -86,7 +86,7 @@ def test_ensure_status_column_skips_when_exists():
 
     with patch.object(db_utils, "notion") as mock_notion:
         mock_notion.databases.retrieve.return_value = {
-            "properties": {"상태": {"type": "status"}}
+            "properties": {"상태": {"type": "select"}}
         }
         mock_notion.databases.update = MagicMock()
 
@@ -107,5 +107,5 @@ def test_ensure_status_column_updates_wrong_type():
         db_utils.ensure_status_column("db2", default_name="완료")
 
         call_args = mock_notion.databases.update.call_args
-        status_prop = call_args[1]["properties"]["상태"]["status"]
+        status_prop = call_args[1]["properties"]["상태"]["select"]
         assert status_prop["default"]["name"] == "완료"

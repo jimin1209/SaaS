@@ -2,7 +2,9 @@
 import asyncio
 import traceback
 from logging_utils import get_logger
-from slack_utils import send_message, send_error_webhook
+from slack_utils import send_message, send_error_webhook, SlackLogHandler
+import logging
+from config import LOG_LEVEL
 from notion_db_utils import (
     delete_existing_databases,
     create_database,
@@ -12,6 +14,11 @@ from notion_db_utils import (
 )
 from notion_templates import DATABASE_TEMPLATES
 
+root_logger = logging.getLogger()
+root_logger.setLevel(LOG_LEVEL)
+slack_handler = SlackLogHandler()
+slack_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+root_logger.addHandler(slack_handler)
 log = get_logger(__name__)
 
 
