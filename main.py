@@ -16,7 +16,12 @@ log = get_logger(__name__)
 
 
 async def run() -> None:
-    """Create Notion databases and fill them with sample data."""
+    """Create Notion databases and fill them with sample data.
+
+    ``create_database`` automatically verifies that a ``상태`` status column
+    exists on each newly created database so that subsequent calls that rely on
+    this field do not fail.
+    """
     if not notion:
         log.warning("Notion client not configured; skipping database creation")
         await send_message("⚠️ Notion credentials missing")

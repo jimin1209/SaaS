@@ -62,3 +62,31 @@ def test_delete_databases_handles_pagination():
         assert mock_notion.blocks.children.list.call_count == 2
         deleted = [c.kwargs["block_id"] for c in mock_notion.blocks.delete.call_args_list]
         assert deleted == ["id1", "id2"]
+
+
+def test_ensure_status_column_creates_missing():
+    """상태 컬럼이 없을 때 자동으로 추가되는지 확인"""
+
+    with patch.object(db_utils, "notion") as mock_notion:
+        mock_notion.databases.retrieve.return_value = {"properties": {}}
+        mock_notion.databases.update = MagicMock()
+
+        db_utils.ensure_status_column("db1")
+
+        mock_notion.databases.update.assert_called_once_with(
+            "db1", properties={"상태": {"status": {}}}
+        )
+
+
+def test_ensure_status_column_skips_when_exists():
+    """상태 컬럼이 이미 존재하면 수정하지 않아야 한다."""
+
+    with patch.object(db_utils, "notion") as mock_notion:
+        mock_notion.databases.retrieve.return_value = {
+            "properties": {"상태": {"type": "status"}}
+        }
+        mock_notion.databases.update = MagicMock()
+
+        db_utils.ensure_status_column("db1")
+
+        mock_notion.databases.update.assert_not_called()

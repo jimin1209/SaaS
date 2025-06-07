@@ -25,6 +25,9 @@ main.py            - entry point using the above modules
 4. Relation columns can specify a `target_template` value. Databases are
    created first and then these relations are automatically added in a second
    step once the target database IDs are known.
+5. Every database is checked right after creation to ensure a ``상태`` status
+   column exists. If it is missing or of a wrong type it will be automatically
+   added so subsequent operations work reliably.
 
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
