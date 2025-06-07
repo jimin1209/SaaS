@@ -33,8 +33,8 @@ async def run() -> None:
     등록됩니다.
     """
     if not notion:
-        log.warning("Notion client not configured; skipping database creation")
-        await send_message("⚠️ Notion credentials missing")
+        log.warning("노션 클라이언트 미설정으로 생성을 건너뜁니다")
+        await send_message("⚠️ 노션 인증 정보 없음")
         return
     delete_existing_databases()
     db_ids = {}
@@ -44,8 +44,17 @@ async def run() -> None:
 
     add_relation_columns(db_ids)
 
+    page_ids = {}
     for tmpl in DATABASE_TEMPLATES:
-        await create_dummy_data(db_ids[tmpl["template_title"]], tmpl["template_title"])
+        rel_ids = None
+        if tmpl["template_title"] == "휴가 및 출장 증빙서류":
+            rel_ids = page_ids.get("출장 요청서", []).copy()
+        ids = await create_dummy_data(
+            db_ids[tmpl["template_title"]],
+            tmpl["template_title"],
+            related_page_ids=rel_ids,
+        )
+        page_ids[tmpl["template_title"]] = ids
         
     await send_message("✅ Notion automation complete")
 
@@ -54,7 +63,7 @@ def main() -> None:
     try:
         asyncio.run(run())
     except Exception as exc:
-        log.error("Unhandled error: %s", exc)
+        log.error("예상치 못한 오류: %s", exc)
         send_error_webhook(exc)
         raise
 

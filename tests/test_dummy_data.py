@@ -10,14 +10,15 @@ async def test_trip_date_parsing():
     """출장 요청 더미 데이터 생성 시 날짜 파싱 검증"""
 
     with patch.object(db_utils, "notion") as mock_notion:
-        mock_notion.pages.create = MagicMock()
+        mock_notion.pages.create = MagicMock(return_value={"id": "p"})
         mock_notion.databases.retrieve.return_value = {
             "properties": {"상태": {"type": "select"}}
         }
 
-        await db_utils.create_dummy_data("db_id", "출장 요청서")
+        ids = await db_utils.create_dummy_data("db_id", "출장 요청서")
 
         assert mock_notion.pages.create.call_count == 5
+        assert len(ids) == 5
         first_call = mock_notion.pages.create.call_args_list[0]
         props = first_call.kwargs["properties"]
         assert props["출장기간"]["date"]["start"] == "2024-06-01"
@@ -115,17 +116,21 @@ async def test_create_dummy_data_select_and_relation():
     """select 및 relation 타입이 올바르게 매핑되는지 확인"""
 
     with patch.object(db_utils, "notion") as mock_notion:
-        mock_notion.pages.create = MagicMock()
+        mock_notion.pages.create = MagicMock(return_value={"id": "r"})
         mock_notion.databases.retrieve.return_value = {
             "properties": {"상태": {"type": "select"}}
         }
 
-        await db_utils.create_dummy_data("db", "휴가 및 출장 증빙서류")
+        await db_utils.create_dummy_data(
+            "db",
+            "휴가 및 출장 증빙서류",
+            related_page_ids=["target"]
+        )
 
         call = mock_notion.pages.create.call_args_list[0]
         props = call.kwargs["properties"]
         assert "관련 요청" in props
-        assert props["관련 요청"]["relation"] == [{"id": "dummy-page"}]
+        assert props["관련 요청"]["relation"] == [{"id": "target"}]
 
 
 @pytest.mark.asyncio
@@ -133,7 +138,7 @@ async def test_create_dummy_data_select_columns():
     """select 타입 컬럼이 문자열 값으로 생성되는지 확인"""
 
     with patch.object(db_utils, "notion") as mock_notion:
-        mock_notion.pages.create = MagicMock()
+        mock_notion.pages.create = MagicMock(return_value={"id": "c"})
         mock_notion.databases.retrieve.return_value = {
             "properties": {"상태": {"type": "select"}}
         }
@@ -151,7 +156,7 @@ async def test_create_dummy_data_replaces_dummy_user():
     with patch.object(db_utils, "notion") as mock_notion, patch.object(
         db_utils, "DEFAULT_USER_ID", "user-uuid"
     ):
-        mock_notion.pages.create = MagicMock()
+        mock_notion.pages.create = MagicMock(return_value={"id": "p"})
         mock_notion.databases.retrieve.return_value = {
             "properties": {"상태": {"type": "select"}}
         }
