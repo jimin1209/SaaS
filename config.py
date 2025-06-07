@@ -17,10 +17,14 @@ PARENT_PAGE_ID = os.getenv("PARENT_PAGE_ID")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 SLACK_CHANNEL = os.getenv("SLACK_CHANNEL", "#general")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+SLACK_ERROR_WEBHOOK_URL = os.getenv("SLACK_ERROR_WEBHOOK_URL")
 
 # Google calendar (optional)
 GOOGLE_CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
 GOOGLE_CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_ID", "primary")
+
+# Optional default user id for people properties
+DEFAULT_USER_ID = os.getenv("DEFAULT_USER_ID")
 
 # Logging level
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
