@@ -12,6 +12,5 @@ if not exist .env (
     copy .env.example .env
 )
 
-python SaaS.py
+python main.py
 pause
-
