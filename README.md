@@ -51,6 +51,19 @@ root_logger.addHandler(SlackLogHandler())
 이후 `logging.info()` 등으로 기록한 메시지는 실시간으로 슬랙에서 확인할 수
 있습니다.
 
+## Google Calendar 연동
+`google_calendar_utils.create_event` 함수는 서비스 계정 키(`GOOGLE_CREDENTIALS_FILE`)
+와 캘린더 ID(`GOOGLE_CALENDAR_ID`)를 사용해 이벤트를 등록합니다. `main.py`에서는
+"회사 일정 캘린더" 데이터베이스에 더미 데이터를 넣을 때 자동으로 일정이 생성됩니다.
+
+```python
+from google_calendar_utils import create_event
+
+create_event("회의", "2024-10-01", "2024-10-01", "월간 회의")
+```
+
+실행 후 구글 캘린더에서 이벤트가 정상적으로 생성됐는지 확인하세요.
+
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
 2. Register the service:
@@ -65,6 +78,7 @@ root_logger.addHandler(SlackLogHandler())
 ## Tests
 Run `pytest` to execute the unit tests.
 
+## 확장/수정 가이드
 * 상태 옵션을 변경하려면 ``notion_db_utils.py`` 상단의 ``DEFAULT_SELECT_OPTIONS``
   리스트를 수정하세요.
 * 기본 상태값을 바꾸려면 ``DEFAULT_SELECT_NAME`` 상수를 변경하거나

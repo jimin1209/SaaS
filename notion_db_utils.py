@@ -7,6 +7,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency for tests
 from config import NOTION_TOKEN, PARENT_PAGE_ID
 from logging_utils import get_logger
 import notion_templates as templates
+from google_calendar_utils import create_event
 
 log = get_logger(__name__)
 
@@ -141,14 +142,34 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
 
     items = templates.get_dummy_items(template_title)
     for item in items:
-        props = {
-            "제목": {"title": [{"text": {"content": item["제목"]}}]},
-            "상태": {"select": {"name": item["상태"]}},
-        }
-        if "출장기간" in item:
-            start, end = item["출장기간"].split("/")
-            props["출장기간"] = {"date": {"start": start, "end": end}}
+        props: Dict[str, Dict] = {}
+        for key, value in item.items():
+            if key == "제목":
+                props[key] = {"title": [{"text": {"content": value}}]}
+            elif key == "상태":
+                props[key] = {"select": {"name": value}}
+            elif key == "출장기간" and isinstance(value, str) and "/" in value:
+                start, end = value.split("/")
+                props[key] = {"date": {"start": start, "end": end}}
+            elif key in ("요청일", "휴가시작", "휴가종료", "교육일", "시작일", "종료일"):
+                props[key] = {"date": {"start": value}}
+            elif key == "금액":
+                props[key] = {"number": value}
+            elif key == "첨부파일" and isinstance(value, list):
+                props[key] = {"files": value}
+            elif isinstance(value, list) and value and value[0].get("object") == "user":
+                props[key] = {"people": value}
+            elif isinstance(value, str):
+                props[key] = {"rich_text": [{"text": {"content": value}}]}
+                
         notion.pages.create(parent={"database_id": db_id}, properties=props)
+        if template_title == "회사 일정 캘린더" and "시작일" in props:
+            create_event(
+                props["제목"]["title"][0]["text"]["content"],
+                props["시작일"]["date"]["start"],
+                props.get("종료일", {"date": {"start": props["시작일"]["date"]["start"]}})["date"]["start"],
+                item.get("설명", ""),
+            )
     log.info("Inserted %d dummy rows", len(items))
 
 def add_relation_columns(db_id_map: Dict[str, str]) -> None:
