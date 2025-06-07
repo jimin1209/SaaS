@@ -25,6 +25,6 @@ jobs:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
         run: |
           echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT }}" > credentials.json
-          python SaaS.py
+          python main.py
 
 
