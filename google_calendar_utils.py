@@ -1,6 +1,10 @@
 """Google Calendar integration helpers."""
-from googleapiclient.discovery import build
-from google.oauth2.service_account import Credentials
+try:
+    from googleapiclient.discovery import build
+    from google.oauth2.service_account import Credentials
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    build = None
+    Credentials = None
 from config import GOOGLE_CREDENTIALS_FILE, GOOGLE_CALENDAR_ID
 from logging_utils import get_logger
 
@@ -8,7 +12,7 @@ log = get_logger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 _service = None
-if GOOGLE_CREDENTIALS_FILE:
+if GOOGLE_CREDENTIALS_FILE and Credentials and build:
     try:
         creds = Credentials.from_service_account_file(
             GOOGLE_CREDENTIALS_FILE, scopes=SCOPES

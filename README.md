@@ -83,6 +83,8 @@ Run `pytest` to execute the unit tests.
   리스트를 수정하세요.
 * 기본 상태값을 바꾸려면 ``DEFAULT_SELECT_NAME`` 상수를 변경하거나
   ``ensure_status_column`` 호출 시 ``default_name`` 인자를 전달하면 됩니다.
+* 더미 데이터 삽입 시 각 템플릿의 속성 정의에 맞춰 타입을 자동 매핑하므로
+  ``부서 is expected to be select`` 와 같은 오류를 방지합니다.
 * Notion API 구조가 변경되면 함수 내부의 ``select_cfg`` 빌드 부분을
   업데이트 하면 대부분의 코드 수정 없이 동작을 맞출 수 있습니다.
 * 기본적으로 Notion의 ``status`` 속성은 고정된 상태 그룹을 제공하지만 이

@@ -140,28 +140,37 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
         log.warning("Missing status(select) column on %s", db_id)
         return
 
+    tmpl = templates.get_template(template_title) or {}
     items = templates.get_dummy_items(template_title)
     for item in items:
         props: Dict[str, Dict] = {}
         for key, value in item.items():
-            if key == "제목":
+            pdef = tmpl.get("properties", {}).get(key, {})
+            ptype = next(iter(pdef.keys()), None)
+            if ptype == "title":
                 props[key] = {"title": [{"text": {"content": value}}]}
-            elif key == "상태":
+            elif ptype == "select":
                 props[key] = {"select": {"name": value}}
-            elif key == "출장기간" and isinstance(value, str) and "/" in value:
-                start, end = value.split("/")
-                props[key] = {"date": {"start": start, "end": end}}
-            elif key in ("요청일", "휴가시작", "휴가종료", "교육일", "시작일", "종료일"):
-                props[key] = {"date": {"start": value}}
-            elif key == "금액":
+            elif ptype == "date" and isinstance(value, str):
+                if key == "출장기간" and "/" in value:
+                    start, end = value.split("/")
+                    props[key] = {"date": {"start": start, "end": end}}
+                else:
+                    props[key] = {"date": {"start": value}}
+            elif ptype == "number":
                 props[key] = {"number": value}
-            elif key == "첨부파일" and isinstance(value, list):
+            elif ptype == "files":
                 props[key] = {"files": value}
-            elif isinstance(value, list) and value and value[0].get("object") == "user":
+            elif ptype == "people":
                 props[key] = {"people": value}
-            elif isinstance(value, str):
-                props[key] = {"rich_text": [{"text": {"content": value}}]}
-                
+            elif ptype == "relation":
+                ids = value if isinstance(value, list) else [value]
+                props[key] = {"relation": [{"id": i} for i in ids]}
+            else:
+                if isinstance(value, list) and value and value[0].get("object") == "user":
+                    props[key] = {"people": value}
+                elif isinstance(value, str):
+                    props[key] = {"rich_text": [{"text": {"content": value}}]}
         notion.pages.create(parent={"database_id": db_id}, properties=props)
         if template_title == "회사 일정 캘린더" and "시작일" in props:
             create_event(
