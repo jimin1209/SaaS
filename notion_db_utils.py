@@ -37,11 +37,21 @@ def create_database(template: Dict) -> str:
     if not notion:
         raise RuntimeError("Notion client not configured")
     title_text = template["template_title"]
+    properties = {}
+    for name, prop in template["properties"].items():
+        # Notion requires relation properties to specify the target database.
+        # Templates may leave the relation config empty so skip it for now and
+        # let users create the relation manually after all databases exist.
+        if prop.get("relation") == {}:
+            log.debug("Skipping relation property %s for %s", name, title_text)
+            continue
+        properties[name] = prop
+
     res = notion.databases.create(
         parent={"type": "page_id", "page_id": PARENT_PAGE_ID},
         title=[{"type": "text", "text": {"content": title_text}}],
         icon={"type": "emoji", "emoji": template.get("icon_emoji", "📄")},
-        properties=template["properties"],
+        properties=properties,
     )
     log.info("Created database %s", title_text)
     return res["id"]

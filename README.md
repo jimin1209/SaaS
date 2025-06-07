@@ -22,6 +22,8 @@ main.py            - entry point using the above modules
 3. Edit `.env` with your tokens and IDs. `SLACK_WEBHOOK_URL`에 에러 알림용 웹훅 주소를 설정하세요.
    If `NOTION_TOKEN` is not provided the script logs a warning and exits
    without touching Notion, which is useful for CI runs.
+4. Relation columns with no target database are skipped during creation.
+   You can add these relations manually later through the Notion UI.
 
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
