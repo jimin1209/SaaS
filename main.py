@@ -20,7 +20,8 @@ async def run() -> None:
 
     ``create_database`` automatically verifies that a ``상태`` status column
     exists on each newly created database so that subsequent calls that rely on
-    this field do not fail.
+    this field do not fail. 기본 옵션은 ``미처리/진행중/완료/반려``이며 필요한 경우
+    ``ensure_status_column`` 호출 시 다른 기본값을 지정할 수 있습니다.
     """
     if not notion:
         log.warning("Notion client not configured; skipping database creation")
