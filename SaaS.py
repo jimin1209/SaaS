@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from notion_client import Client
 from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.errors import SlackApiError
+from slack_sdk.webhook import WebhookClient
+import traceback
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -18,12 +20,18 @@ NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 PARENT_PAGE_ID = os.getenv("PARENT_PAGE_ID")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 GOOGLE_CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
 GOOGLE_CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_ID", "primary")
 
 # 2. 클라이언트 초기화
 notion = Client(auth=NOTION_TOKEN)
 slack_client = AsyncWebClient(token=SLACK_BOT_TOKEN)
+
+# Slack Webhook for error notifications
+# 윈도우에서 .env에 SLACK_WEBHOOK_URL 설정 후 setup.bat 실행
+# 리눅스에서는 `export SLACK_WEBHOOK_URL=... && python SaaS.py` 형식으로 적용
+webhook_client = WebhookClient(SLACK_WEBHOOK_URL) if SLACK_WEBHOOK_URL else None
 
 def init_google_calendar():
     try:
@@ -39,6 +47,55 @@ def init_google_calendar():
         return None
 
 google_calendar_service = init_google_calendar()
+
+def send_error_webhook(trace_text: str):
+    """Send detailed traceback to Slack via incoming webhook."""
+    if not webhook_client:
+        # 환경변수 미설정 시 웹훅 전송 스킵
+        return
+    message = (
+        "❗️[자동화 시스템 에러 발생]\n"
+        "내 SaaS 자동화 시스템에서 아래와 같은 에러가 발생했습니다.\n\n"
+        "=== 에러 로그 ===\n"
+        f"```\n{trace_text}\n```\n"
+        "아래 내용을 Codex/ChatGPT에 붙여넣으면\n"
+        "원인/수정법/코드를 안내받을 수 있습니다.\n"
+        "내 환경: Windows+venv+setup.bat+SaaS.py"
+    )
+    try:
+        resp = webhook_client.send(text=message)
+        if resp.status_code != 200:
+            print(f"[Slack Webhook] 전송 실패: {resp.status_code}")
+    except Exception as err:
+        print(f"[Slack Webhook] 전송 중 예외: {err}")
+
+# Google Calendar helper functions
+def add_event(summary, start, end):
+    if not google_calendar_service:
+        return None
+    event = {
+        "summary": summary,
+        "start": {"dateTime": start},
+        "end": {"dateTime": end},
+    }
+    created = google_calendar_service.events().insert(calendarId=GOOGLE_CALENDAR_ID, body=event).execute()
+    return created.get("id")
+
+def update_event(event_id, summary=None, start=None, end=None):
+    if not google_calendar_service:
+        return
+    event = google_calendar_service.events().get(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id).execute()
+    if summary:
+        event["summary"] = summary
+    if start:
+        event["start"] = {"dateTime": start}
+    if end:
+        event["end"] = {"dateTime": end}
+    google_calendar_service.events().update(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id, body=event).execute()
+
+def delete_event(event_id):
+    if google_calendar_service:
+        google_calendar_service.events().delete(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id).execute()
 
 # 3. 기존 Notion DB 삭제 함수
 def delete_existing_databases():
@@ -354,7 +411,22 @@ async def main_async():
         print(f"[슬랙] 메시지 전송 실패: {getattr(e, 'response', str(e))}")
 
 def main():
-    asyncio.run(main_async())
+    try:
+        asyncio.run(main_async())
+    except Exception as e:
+        trace_text = traceback.format_exc()
+        print(trace_text)
+        send_error_webhook(trace_text)
+        try:
+            asyncio.run(slack_client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                text=f"❌ 작업 실패: {e}"
+            ))
+        except Exception:
+            pass
+        raise
 
 if __name__ == "__main__":
+    # Windows: setup.bat 실행 또는 `venv\Scripts\python.exe SaaS.py`
+    # Linux: source venv/bin/activate && python SaaS.py
     main()
