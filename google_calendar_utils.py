@@ -19,15 +19,15 @@ if GOOGLE_CREDENTIALS_FILE and Credentials and build:
         )
         _service = build("calendar", "v3", credentials=creds)
     except Exception as exc:  # pragma: no cover - filesystem/network issues
-        log.error("Failed to init Google Calendar service: %s", exc)
+        log.error("구글 캘린더 서비스 초기화 실패: %s", exc)
 else:  # pragma: no cover - optional dependency
-    log.debug("GOOGLE_CREDENTIALS_FILE not configured")
+    log.debug("GOOGLE_CREDENTIALS_FILE 미설정")
 
 
 def create_event(summary: str, start: str, end: str, description: str = "") -> None:
     """Create a calendar event using RFC3339 date strings."""
     if not _service:
-        log.debug("Google Calendar service not available")
+        log.debug("구글 캘린더 서비스 사용 불가")
         return
     event = {
         "summary": summary,
@@ -38,6 +38,6 @@ def create_event(summary: str, start: str, end: str, description: str = "") -> N
         event["description"] = description
     try:
         _service.events().insert(calendarId=GOOGLE_CALENDAR_ID, body=event).execute()
-        log.info("Created calendar event %s", summary)
+        log.info("캘린더 이벤트 생성: %s", summary)
     except Exception as exc:  # pragma: no cover - network issues
-        log.error("Failed to create calendar event %s: %s", summary, exc)
+        log.error("캘린더 이벤트 생성 실패 %s: %s", summary, exc)
