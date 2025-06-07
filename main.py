@@ -3,7 +3,12 @@ import asyncio
 import traceback
 from logging_utils import get_logger
 from slack_utils import send_message, send_error_webhook
-from notion_db_utils import delete_existing_databases, create_database, create_dummy_data
+from notion_db_utils import (
+    delete_existing_databases,
+    create_database,
+    create_dummy_data,
+    notion,
+)
 from notion_templates import DATABASE_TEMPLATES
 
 log = get_logger(__name__)
@@ -11,6 +16,11 @@ log = get_logger(__name__)
 
 async def run() -> None:
     """Create Notion databases and fill them with sample data."""
+    if not notion:
+        log.warning("Notion client not configured; skipping database creation")
+        await send_message("⚠️ Notion credentials missing")
+        return
+      
     delete_existing_databases()
     for tmpl in DATABASE_TEMPLATES:
         db_id = create_database(tmpl)

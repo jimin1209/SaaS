@@ -20,6 +20,8 @@ main.py            - entry point using the above modules
 1. Clone the repository and open a VSCode terminal.
 2. Run `setup.bat` which creates `venv`, installs dependencies and executes `main.py`.
 3. Edit `.env` with your tokens and IDs. `SLACK_WEBHOOK_URL`에 에러 알림용 웹훅 주소를 설정하세요.
+   If `NOTION_TOKEN` is not provided the script logs a warning and exits
+   without touching Notion, which is useful for CI runs.
 
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
