@@ -109,8 +109,7 @@ def test_ensure_status_column_updates_wrong_type():
         call_args = mock_notion.databases.update.call_args
         status_prop = call_args[1]["properties"]["상태"]["select"]
         assert status_prop["default"]["name"] == "완료"
-
-
+        
 @pytest.mark.asyncio
 async def test_create_dummy_data_select_and_relation():
     """select 및 relation 타입이 올바르게 매핑되는지 확인"""
