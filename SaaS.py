@@ -69,6 +69,7 @@ def send_error_webhook(trace_text: str):
     except Exception as err:
         print(f"[Slack Webhook] 전송 중 예외: {err}")
 
+=======
 # Google Calendar helper functions
 def add_event(summary, start, end):
     if not google_calendar_service:
@@ -417,6 +418,7 @@ def main():
         trace_text = traceback.format_exc()
         print(trace_text)
         send_error_webhook(trace_text)
+        print(f"Unhandled error: {e}")
         try:
             asyncio.run(slack_client.chat_postMessage(
                 channel=SLACK_CHANNEL,
@@ -429,4 +431,5 @@ def main():
 if __name__ == "__main__":
     # Windows: setup.bat 실행 또는 `venv\Scripts\python.exe SaaS.py`
     # Linux: source venv/bin/activate && python SaaS.py
+=======
     main()
