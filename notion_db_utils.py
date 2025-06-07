@@ -1,14 +1,26 @@
 """Utility functions for interacting with Notion databases."""
-from typing import Dict
+from typing import Dict, List, Optional
 try:
     from notion_client import Client
 except ModuleNotFoundError:  # pragma: no cover - optional dependency for tests
     Client = None
-from config import NOTION_TOKEN, PARENT_PAGE_ID
+from config import NOTION_TOKEN, PARENT_PAGE_ID, DEFAULT_USER_ID
 from logging_utils import get_logger
 import notion_templates as templates
+from google_calendar_utils import create_event
 
 log = get_logger(__name__)
+
+# 기본 상태 옵션과 색상을 정의
+# ``status`` 속성 대신 ``select`` 타입을 사용하여 상태값을 관리한다.
+# Notion API에서 지원하는 색상값이 바뀌면 아래 리스트만 수정하면 됩니다.
+DEFAULT_SELECT_OPTIONS = [
+    {"name": "미처리", "color": "default"},
+    {"name": "진행중", "color": "yellow"},
+    {"name": "완료", "color": "green"},
+    {"name": "반려", "color": "red"},
+]
+DEFAULT_SELECT_NAME = "미처리"
 
 # Global notion client that other modules may reuse
 if Client and NOTION_TOKEN:
@@ -17,13 +29,32 @@ else:  # pragma: no cover - used when notion-client not installed for tests
     notion = None
 
 
-def ensure_status_column(db_id: str) -> None:
-    """Ensure the given database has a '상태' status property.
+def ensure_status_column(
+    db_id: str,
+    *,
+    options: Optional[List[Dict[str, str]]] = None,
+    default_name: Optional[str] = None,
+) -> None:
+    """Ensure the given database has a styled ``상태`` select property.
 
-    This helper is used right after creating a database as some templates
-    may miss the column or have it defined with a wrong type. If the column
-    is missing or not a ``status`` property, it will be added/updated using
-    ``databases.update``.
+    # 변경 포인트: Notion API에서 status 속성 구조가 바뀌면 아래 옵션 구성
+    # ``status_cfg`` 부분만 수정하면 된다.
+
+    Parameters
+    ----------
+    db_id:
+        ID of the database to update.
+    options:
+        List of select option dictionaries with ``name`` and ``color`` keys.
+        ``DEFAULT_SELECT_OPTIONS`` is used when omitted.
+    default_name:
+        Default select name to apply when creating new property.
+        ``DEFAULT_SELECT_NAME`` when omitted.
+
+    This helper is used right after creating a database as some templates may
+    miss the column or have it defined with a wrong type. If the column is
+    missing or not a ``select`` property it will be recreated using
+    ``databases.update`` with the given options.
     """
     if not notion:
         log.debug("Notion client not configured")
@@ -31,9 +62,14 @@ def ensure_status_column(db_id: str) -> None:
     try:
         info = notion.databases.retrieve(db_id)
         prop = info.get("properties", {}).get("상태")
-        if not prop or prop.get("type") != "status":
-            notion.databases.update(db_id, properties={"상태": {"status": {}}})
-            log.info("Ensured status column on %s", db_id)
+        need_update = not prop or prop.get("type") != "select"
+        if need_update:
+            select_cfg = {"options": options or DEFAULT_SELECT_OPTIONS}
+            name = default_name or DEFAULT_SELECT_NAME
+            if name:
+                select_cfg["default"] = {"name": name}
+            notion.databases.update(db_id, properties={"상태": {"select": select_cfg}})
+            log.info("Ensured status(select) column on %s", db_id)
     except Exception as exc:  # pragma: no cover - network failures
         log.error("Failed to ensure status column on %s: %s", db_id, exc)
 
@@ -100,20 +136,65 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
     # Verify the status column exists before inserting sample rows
     ensure_status_column(db_id)
     prop = notion.databases.retrieve(db_id)["properties"]
-    if "상태" not in prop or prop["상태"].get("type") != "status":
-        log.warning("Missing status column on %s", db_id)
+    if "상태" not in prop or prop["상태"].get("type") != "select":
+        log.warning("Missing status(select) column on %s", db_id)
         return
 
+    tmpl = templates.get_template(template_title) or {}
     items = templates.get_dummy_items(template_title)
     for item in items:
-        props = {
-            "제목": {"title": [{"text": {"content": item["제목"]}}]},
-            "상태": {"status": {"name": item["상태"]}},
-        }
-        if "출장기간" in item:
-            start, end = item["출장기간"].split("/")
-            props["출장기간"] = {"date": {"start": start, "end": end}}
+        props: Dict[str, Dict] = {}
+        for key, value in item.items():
+            pdef = tmpl.get("properties", {}).get(key, {})
+            ptype = next(iter(pdef.keys()), None)
+            if ptype == "title":
+                props[key] = {"title": [{"text": {"content": value}}]}
+            elif ptype == "select":
+                props[key] = {"select": {"name": value}}
+            elif ptype == "date" and isinstance(value, str):
+                if key == "출장기간" and "/" in value:
+                    start, end = value.split("/")
+                    props[key] = {"date": {"start": start, "end": end}}
+                else:
+                    props[key] = {"date": {"start": value}}
+            elif ptype == "number":
+                props[key] = {"number": value}
+            elif ptype == "files":
+                props[key] = {"files": value}
+            elif ptype == "people":
+                people_ids = []
+                for person in value:
+                    pid = person.get("id")
+                    if pid == "dummy-user" and DEFAULT_USER_ID:
+                        people_ids.append({"id": DEFAULT_USER_ID})
+                    elif pid and pid != "dummy-user":
+                        people_ids.append({"id": pid})
+                if people_ids:
+                    props[key] = {"people": people_ids}
+            elif ptype == "relation":
+                ids = value if isinstance(value, list) else [value]
+                props[key] = {"relation": [{"id": i} for i in ids]}
+            else:
+                if isinstance(value, list) and value and value[0].get("object") == "user":
+                    people_ids = []
+                    for person in value:
+                        pid = person.get("id")
+                        if pid == "dummy-user" and DEFAULT_USER_ID:
+                            people_ids.append({"id": DEFAULT_USER_ID})
+                        elif pid and pid != "dummy-user":
+                            people_ids.append({"id": pid})
+                    if people_ids:
+                        props[key] = {"people": people_ids}
+                elif isinstance(value, str):
+                    props[key] = {"rich_text": [{"text": {"content": value}}]}
         notion.pages.create(parent={"database_id": db_id}, properties=props)
+        if template_title == "회사 일정 캘린더" and "시작일" in props:
+            create_event(
+                props["제목"]["title"][0]["text"]["content"],
+                props["시작일"]["date"]["start"],
+                props.get("종료일", {"date": {"start": props["시작일"]["date"]["start"]}})["date"]["start"],
+                item.get("설명", ""),
+            )
     log.info("Inserted %d dummy rows", len(items))
 
 def add_relation_columns(db_id_map: Dict[str, str]) -> None:
