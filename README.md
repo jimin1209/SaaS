@@ -14,7 +14,7 @@ SaaS.py              - main automation script
 ## Quick Start (Windows)
 1. Clone the repository and open a VSCode terminal.
 2. Run `setup.bat`. The script creates/activates `venv`, installs dependencies, copies `.env.example` to `.env` if missing and executes `SaaS.py`.
-3. Edit `.env` with your tokens and IDs.
+3. Edit `.env` with your tokens and IDs. `SLACK_WEBHOOK_URL`에 에러 알림용 웹훅 주소를 설정하세요.
 
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
