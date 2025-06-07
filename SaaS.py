@@ -40,6 +40,34 @@ def init_google_calendar():
 
 google_calendar_service = init_google_calendar()
 
+# Google Calendar helper functions
+def add_event(summary, start, end):
+    if not google_calendar_service:
+        return None
+    event = {
+        "summary": summary,
+        "start": {"dateTime": start},
+        "end": {"dateTime": end},
+    }
+    created = google_calendar_service.events().insert(calendarId=GOOGLE_CALENDAR_ID, body=event).execute()
+    return created.get("id")
+
+def update_event(event_id, summary=None, start=None, end=None):
+    if not google_calendar_service:
+        return
+    event = google_calendar_service.events().get(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id).execute()
+    if summary:
+        event["summary"] = summary
+    if start:
+        event["start"] = {"dateTime": start}
+    if end:
+        event["end"] = {"dateTime": end}
+    google_calendar_service.events().update(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id, body=event).execute()
+
+def delete_event(event_id):
+    if google_calendar_service:
+        google_calendar_service.events().delete(calendarId=GOOGLE_CALENDAR_ID, eventId=event_id).execute()
+
 # 3. 기존 Notion DB 삭제 함수
 def delete_existing_databases():
     print("== 기존 DB 전체 삭제 시도 ==")
@@ -354,7 +382,18 @@ async def main_async():
         print(f"[슬랙] 메시지 전송 실패: {getattr(e, 'response', str(e))}")
 
 def main():
-    asyncio.run(main_async())
+    try:
+        asyncio.run(main_async())
+    except Exception as e:
+        print(f"Unhandled error: {e}")
+        try:
+            asyncio.run(slack_client.chat_postMessage(
+                channel=SLACK_CHANNEL,
+                text=f"❌ 작업 실패: {e}"
+            ))
+        except Exception:
+            pass
+        raise
 
 if __name__ == "__main__":
     main()
