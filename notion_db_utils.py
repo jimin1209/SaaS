@@ -161,6 +161,7 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
                 props[key] = {"people": value}
             elif isinstance(value, str):
                 props[key] = {"rich_text": [{"text": {"content": value}}]}
+                
         notion.pages.create(parent={"database_id": db_id}, properties=props)
         if template_title == "회사 일정 캘린더" and "시작일" in props:
             create_event(

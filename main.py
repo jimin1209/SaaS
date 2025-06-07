@@ -31,6 +31,7 @@ async def run() -> None:
     ``ensure_status_column`` 호출 시 다른 기본값을 지정할 수 있습니다. 또한
     "회사 일정 캘린더" 테이블 더미 데이터는 생성과 동시에 구글 캘린더 일정도
     등록됩니다.
+
     """
     if not notion:
         log.warning("Notion client not configured; skipping database creation")
