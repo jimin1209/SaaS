@@ -23,11 +23,20 @@ def delete_existing_databases(parent_page_id: str = PARENT_PAGE_ID) -> None:
         log.debug("Notion client not configured")
         return
     try:
-        children = notion.blocks.children.list(parent_page_id).get("results", [])
-        for block in children:
-            if block["type"] == "child_database":
-                notion.blocks.delete(block_id=block["id"])
-                log.info("Deleted old database %s", block["id"])
+        cursor = None
+        while True:
+            if cursor:
+                page = notion.blocks.children.list(parent_page_id, start_cursor=cursor)
+            else:
+                page = notion.blocks.children.list(parent_page_id)
+            children = page.get("results", [])
+            for block in children:
+                if block.get("type") == "child_database":
+                    notion.blocks.delete(block_id=block["id"])
+                    log.info("Deleted old database %s", block["id"])
+            cursor = page.get("next_cursor")
+            if not cursor:
+                break
     except Exception as e:
         log.error("Failed to delete databases: %s", e)
 
@@ -98,7 +107,13 @@ def add_relation_columns(db_id_map: Dict[str, str]) -> None:
                 target_title = prop.get("target_template")
                 target_id = db_id_map.get(target_title)
                 if target_id:
-                    updates[name] = {"relation": {"database_id": target_id}}
+                    updates[name] = {
+                        "relation": {
+                            "database_id": target_id,
+                            "type": "single_property",
+                            "single_property": {},
+                        }
+                    }
                 else:
                     log.warning(
                         "Relation target %s for %s missing", target_title, name
