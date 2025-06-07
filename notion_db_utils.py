@@ -17,6 +17,27 @@ else:  # pragma: no cover - used when notion-client not installed for tests
     notion = None
 
 
+def ensure_status_column(db_id: str) -> None:
+    """Ensure the given database has a '상태' status property.
+
+    This helper is used right after creating a database as some templates
+    may miss the column or have it defined with a wrong type. If the column
+    is missing or not a ``status`` property, it will be added/updated using
+    ``databases.update``.
+    """
+    if not notion:
+        log.debug("Notion client not configured")
+        return
+    try:
+        info = notion.databases.retrieve(db_id)
+        prop = info.get("properties", {}).get("상태")
+        if not prop or prop.get("type") != "status":
+            notion.databases.update(db_id, properties={"상태": {"status": {}}})
+            log.info("Ensured status column on %s", db_id)
+    except Exception as exc:  # pragma: no cover - network failures
+        log.error("Failed to ensure status column on %s: %s", db_id, exc)
+
+
 def delete_existing_databases(parent_page_id: str = PARENT_PAGE_ID) -> None:
     """Remove all child databases under the given Notion page."""
     if not notion:
@@ -65,7 +86,10 @@ def create_database(template: Dict) -> str:
         properties=properties,
     )
     log.info("Created database %s", title_text)
-    return res["id"]
+    db_id = res["id"]
+    # Ensure the status column exists right after creation
+    ensure_status_column(db_id)
+    return db_id
 
 
 async def create_dummy_data(db_id: str, template_title: str) -> None:
@@ -73,8 +97,10 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
     if not notion:
         log.debug("Notion client not configured")
         return
+    # Verify the status column exists before inserting sample rows
+    ensure_status_column(db_id)
     prop = notion.databases.retrieve(db_id)["properties"]
-    if "상태" not in prop or prop["상태"]["type"] != "status":
+    if "상태" not in prop or prop["상태"].get("type") != "status":
         log.warning("Missing status column on %s", db_id)
         return
 
