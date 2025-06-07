@@ -65,7 +65,6 @@ root_logger.addHandler(SlackLogHandler())
 ## Tests
 Run `pytest` to execute the unit tests.
 
-## 확장/수정 가이드
 * 상태 옵션을 변경하려면 ``notion_db_utils.py`` 상단의 ``DEFAULT_SELECT_OPTIONS``
   리스트를 수정하세요.
 * 기본 상태값을 바꾸려면 ``DEFAULT_SELECT_NAME`` 상수를 변경하거나
