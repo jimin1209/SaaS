@@ -39,9 +39,11 @@ def create_database(template: Dict) -> str:
     title_text = template["template_title"]
     properties = {}
     for name, prop in template["properties"].items():
+        # Remove helper keys not supported by Notion
+        prop = {k: v for k, v in prop.items() if k != "target_template"}
         # Notion requires relation properties to specify the target database.
         # Templates may leave the relation config empty so skip it for now and
-        # let users create the relation manually after all databases exist.
+        # create it in a second step once all databases exist.
         if prop.get("relation") == {}:
             log.debug("Skipping relation property %s for %s", name, title_text)
             continue
@@ -78,6 +80,36 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
             props["출장기간"] = {"date": {"start": start, "end": end}}
         notion.pages.create(parent={"database_id": db_id}, properties=props)
     log.info("Inserted %d dummy rows", len(items))
+
+def add_relation_columns(db_id_map: Dict[str, str]) -> None:
+    """Update databases with relation properties once all IDs are known."""
+    if not notion:
+        log.debug("Notion client not configured")
+        return
+
+    for tmpl in templates.DATABASE_TEMPLATES:
+        db_id = db_id_map.get(tmpl["template_title"])
+        if not db_id:
+            continue
+
+        updates = {}
+        for name, prop in tmpl["properties"].items():
+            if prop.get("relation") == {}:
+                target_title = prop.get("target_template")
+                target_id = db_id_map.get(target_title)
+                if target_id:
+                    updates[name] = {"relation": {"database_id": target_id}}
+                else:
+                    log.warning(
+                        "Relation target %s for %s missing", target_title, name
+                    )
+
+        if updates:
+            try:
+                notion.databases.update(db_id, properties=updates)
+                log.info("Updated relations for %s", tmpl["template_title"])
+            except Exception as exc:
+                log.error("Failed to update relations on %s: %s", db_id, exc)
 
 # Example usage:
 # db_id = create_database(templates.DATABASE_TEMPLATES[0])

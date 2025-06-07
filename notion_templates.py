@@ -78,7 +78,8 @@ DATABASE_TEMPLATES = [
         "icon_emoji": "📁",
         "properties": {
             "제목": {"title": {}},
-            "관련 요청": {"relation": {}},
+            # Relation target will be filled after all databases are created
+            "관련 요청": {"relation": {}, "target_template": "출장 요청서"},
             "첨부파일": {"files": {}},
             "상태": {"status": {}},
         },
