@@ -9,7 +9,7 @@ DATABASE_TEMPLATES = [
             "이름": {"rich_text": {}},
             "부서": {"select": {}},
             "직급": {"select": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -23,7 +23,7 @@ DATABASE_TEMPLATES = [
             "요청일": {"date": {}},
             "요청월": {"select": {}},
             "요청자": {"people": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
             "첨부파일": {"files": {}},
         },
     },
@@ -36,7 +36,7 @@ DATABASE_TEMPLATES = [
             "출장지": {"rich_text": {}},
             "출장기간": {"date": {}},
             "출장목적": {"rich_text": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -48,7 +48,7 @@ DATABASE_TEMPLATES = [
             "휴가시작": {"date": {}},
             "휴가종료": {"date": {}},
             "휴가유형": {"select": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -59,7 +59,7 @@ DATABASE_TEMPLATES = [
             "수강생": {"people": {}},
             "교육명": {"rich_text": {}},
             "교육일": {"date": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -69,7 +69,7 @@ DATABASE_TEMPLATES = [
             "제목": {"title": {}},
             "시작일": {"date": {}},
             "종료일": {"date": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
             "설명": {"rich_text": {}},
         },
     },
@@ -81,7 +81,7 @@ DATABASE_TEMPLATES = [
             # Relation target will be filled after all databases are created
             "관련 요청": {"relation": {}, "target_template": "출장 요청서"},
             "첨부파일": {"files": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
 ]
@@ -95,8 +95,15 @@ DUMMY_ITEMS = {
             "계정과목": "소모품비",
             "요청일": "2024-05-01",
             "요청월": "2024-05",
-            "요청자": [],
+            "요청자": [{"object": "user", "id": "dummy-user"}],
             "상태": "미처리",
+            "첨부파일": [
+                {
+                    "name": "receipt1.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/receipt1.pdf"},
+                }
+            ],
         },
         {
             "제목": "지출2",
@@ -105,8 +112,15 @@ DUMMY_ITEMS = {
             "계정과목": "기타",
             "요청일": "2024-05-05",
             "요청월": "2024-05",
-            "요청자": [],
+            "요청자": [{"object": "user", "id": "dummy-user"}],
             "상태": "승인됨",
+            "첨부파일": [
+                {
+                    "name": "receipt2.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/receipt2.pdf"},
+                }
+            ],
         },
         {
             "제목": "지출3",
@@ -115,8 +129,15 @@ DUMMY_ITEMS = {
             "계정과목": "소모품비",
             "요청일": "2024-05-10",
             "요청월": "2024-05",
-            "요청자": [],
+            "요청자": [{"object": "user", "id": "dummy-user"}],
             "상태": "미처리",
+            "첨부파일": [
+                {
+                    "name": "receipt3.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/receipt3.pdf"},
+                }
+            ],
         },
         {
             "제목": "지출4",
@@ -125,8 +146,15 @@ DUMMY_ITEMS = {
             "계정과목": "기타",
             "요청일": "2024-05-15",
             "요청월": "2024-05",
-            "요청자": [],
+            "요청자": [{"object": "user", "id": "dummy-user"}],
             "상태": "승인됨",
+            "첨부파일": [
+                {
+                    "name": "receipt4.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/receipt4.pdf"},
+                }
+            ],
         },
         {
             "제목": "지출5",
@@ -135,8 +163,15 @@ DUMMY_ITEMS = {
             "계정과목": "복리후생",
             "요청일": "2024-05-20",
             "요청월": "2024-05",
-            "요청자": [],
+            "요청자": [{"object": "user", "id": "dummy-user"}],
             "상태": "미처리",
+            "첨부파일": [
+                {
+                    "name": "receipt5.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/receipt5.pdf"},
+                }
+            ],
         },
     ],
     "출장 요청서": [
@@ -332,6 +367,68 @@ DUMMY_ITEMS = {
             "종료일": "2024-09-27",
             "상태": "예정",
             "설명": "팀 워크샵",
+        },
+    ],
+    "휴가 및 출장 증빙서류": [
+        {
+            "제목": "증빙1",
+            "관련 요청": ["dummy-page"],
+            "첨부파일": [
+                {
+                    "name": "proof1.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/proof1.pdf"},
+                }
+            ],
+            "상태": "미처리",
+        },
+        {
+            "제목": "증빙2",
+            "관련 요청": ["dummy-page"],
+            "첨부파일": [
+                {
+                    "name": "proof2.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/proof2.pdf"},
+                }
+            ],
+            "상태": "미처리",
+        },
+        {
+            "제목": "증빙3",
+            "관련 요청": ["dummy-page"],
+            "첨부파일": [
+                {
+                    "name": "proof3.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/proof3.pdf"},
+                }
+            ],
+            "상태": "미처리",
+        },
+        {
+            "제목": "증빙4",
+            "관련 요청": ["dummy-page"],
+            "첨부파일": [
+                {
+                    "name": "proof4.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/proof4.pdf"},
+                }
+            ],
+            "상태": "미처리",
+        },
+        {
+            "제목": "증빙5",
+            "관련 요청": ["dummy-page"],
+            "첨부파일": [
+                {
+                    "name": "proof5.pdf",
+                    "type": "external",
+                    "external": {"url": "https://example.com/proof5.pdf"},
+                }
+            ],
+            "상태": "미처리",
         },
     ],
 }
