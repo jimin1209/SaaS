@@ -1,0 +1,31 @@
+"""Entry point that orchestrates the automation flow."""
+import asyncio
+import traceback
+from logging_utils import get_logger
+from slack_utils import send_message, send_error_webhook
+from notion_db_utils import delete_existing_databases, create_database, create_dummy_data
+from notion_templates import DATABASE_TEMPLATES
+
+log = get_logger(__name__)
+
+
+async def run() -> None:
+    """Create Notion databases and fill them with sample data."""
+    delete_existing_databases()
+    for tmpl in DATABASE_TEMPLATES:
+        db_id = create_database(tmpl)
+        await create_dummy_data(db_id, tmpl["template_title"])
+    await send_message("✅ Notion automation complete")
+
+
+def main() -> None:
+    try:
+        asyncio.run(run())
+    except Exception as exc:
+        log.error("Unhandled error: %s", exc)
+        send_error_webhook(exc)
+        raise
+
+
+if __name__ == "__main__":
+    main()
