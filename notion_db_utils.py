@@ -1,5 +1,5 @@
 """Utility functions for interacting with Notion databases."""
-from typing import Dict
+from typing import Dict, List, Optional
 try:
     from notion_client import Client
 except ModuleNotFoundError:  # pragma: no cover - optional dependency for tests
@@ -10,6 +10,16 @@ import notion_templates as templates
 
 log = get_logger(__name__)
 
+# 기본 상태 옵션과 색상을 정의
+# Notion API에서 지원하는 색상값이 바뀌면 아래 리스트만 수정하면 됩니다.
+DEFAULT_STATUS_OPTIONS = [
+    {"name": "미처리", "color": "default"},
+    {"name": "진행중", "color": "orange"},
+    {"name": "완료", "color": "green"},
+    {"name": "반려", "color": "red"},
+]
+DEFAULT_STATUS_NAME = "미처리"
+
 # Global notion client that other modules may reuse
 if Client and NOTION_TOKEN:
     notion = Client(auth=NOTION_TOKEN)
@@ -17,13 +27,31 @@ else:  # pragma: no cover - used when notion-client not installed for tests
     notion = None
 
 
-def ensure_status_column(db_id: str) -> None:
-    """Ensure the given database has a '상태' status property.
+def ensure_status_column(
+    db_id: str,
+    *,
+    options: Optional[List[Dict[str, str]]] = None,
+    default_name: Optional[str] = None,
+) -> None:
+    """Ensure the given database has a styled ``상태`` status property.
 
-    This helper is used right after creating a database as some templates
-    may miss the column or have it defined with a wrong type. If the column
-    is missing or not a ``status`` property, it will be added/updated using
-    ``databases.update``.
+    # 변경 포인트: Notion API에서 status 속성 구조가 바뀌면 아래 옵션 구성
+    # ``status_cfg`` 부분만 수정하면 된다.
+
+    Parameters
+    ----------
+    db_id:
+        ID of the database to update.
+    options:
+        List of status option dictionaries with ``name`` and ``color`` keys.
+        ``DEFAULT_STATUS_OPTIONS`` is used when omitted.
+    default_name:
+        Default status name to apply. ``DEFAULT_STATUS_NAME`` when omitted.
+
+    This helper is used right after creating a database as some templates may
+    miss the column or have it defined with a wrong type. If the column is
+    missing or not a ``status`` property it will be recreated using
+    ``databases.update`` with the given options.
     """
     if not notion:
         log.debug("Notion client not configured")
@@ -31,8 +59,13 @@ def ensure_status_column(db_id: str) -> None:
     try:
         info = notion.databases.retrieve(db_id)
         prop = info.get("properties", {}).get("상태")
-        if not prop or prop.get("type") != "status":
-            notion.databases.update(db_id, properties={"상태": {"status": {}}})
+        need_update = not prop or prop.get("type") != "status"
+        if need_update:
+            status_cfg = {"options": options or DEFAULT_STATUS_OPTIONS}
+            name = default_name or DEFAULT_STATUS_NAME
+            if name:
+                status_cfg["default"] = {"name": name}
+            notion.databases.update(db_id, properties={"상태": {"status": status_cfg}})
             log.info("Ensured status column on %s", db_id)
     except Exception as exc:  # pragma: no cover - network failures
         log.error("Failed to ensure status column on %s: %s", db_id, exc)

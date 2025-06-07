@@ -27,7 +27,12 @@ main.py            - entry point using the above modules
    step once the target database IDs are known.
 5. Every database is checked right after creation to ensure a ``상태`` status
    column exists. If it is missing or of a wrong type it will be automatically
-   added so subsequent operations work reliably.
+   added so subsequent operations work reliably. The column is created with
+   기본 상태값 *미처리/진행중/완료/반려*와 색상이 설정되며 원하는 기본값을
+   함수 인자로 지정할 수 있습니다.
+   
+   TODO: 실제 결과 화면을 캡처해 `docs/` 폴더에 저장한 뒤 위 링크로
+   이미지 경로를 업데이트하세요.
 
 ## Running as Windows Service
 1. Install [nssm](https://nssm.cc/).
@@ -42,3 +47,11 @@ main.py            - entry point using the above modules
 
 ## Tests
 Run `pytest` to execute the unit tests.
+
+## 확장/수정 가이드
+* 상태 옵션을 변경하려면 ``notion_db_utils.py`` 상단의 ``DEFAULT_STATUS_OPTIONS``
+  리스트를 수정하세요.
+* 기본 상태값을 바꾸려면 ``DEFAULT_STATUS_NAME`` 상수를 변경하거나
+  ``ensure_status_column`` 호출 시 ``default_name`` 인자를 전달하면 됩니다.
+* Notion API 구조가 변경되면 함수 내부의 ``status_cfg`` 빌드 부분을
+  업데이트 하면 대부분의 코드 수정 없이 동작을 맞출 수 있습니다.
