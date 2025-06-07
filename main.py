@@ -20,7 +20,7 @@ async def run() -> None:
         log.warning("Notion client not configured; skipping database creation")
         await send_message("⚠️ Notion credentials missing")
         return
-
+    
     delete_existing_databases()
     for tmpl in DATABASE_TEMPLATES:
         db_id = create_database(tmpl)
