@@ -23,6 +23,9 @@ SLACK_ERROR_WEBHOOK_URL = os.getenv("SLACK_ERROR_WEBHOOK_URL")
 GOOGLE_CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
 GOOGLE_CALENDAR_ID = os.getenv("GOOGLE_CALENDAR_ID", "primary")
 
+# Optional default user id for people properties
+DEFAULT_USER_ID = os.getenv("DEFAULT_USER_ID")
+
 # Logging level
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 

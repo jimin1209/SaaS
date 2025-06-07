@@ -4,7 +4,7 @@ try:
     from notion_client import Client
 except ModuleNotFoundError:  # pragma: no cover - optional dependency for tests
     Client = None
-from config import NOTION_TOKEN, PARENT_PAGE_ID
+from config import NOTION_TOKEN, PARENT_PAGE_ID, DEFAULT_USER_ID
 from logging_utils import get_logger
 import notion_templates as templates
 from google_calendar_utils import create_event
@@ -162,13 +162,29 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
             elif ptype == "files":
                 props[key] = {"files": value}
             elif ptype == "people":
-                props[key] = {"people": value}
+                people_ids = []
+                for person in value:
+                    pid = person.get("id")
+                    if pid == "dummy-user" and DEFAULT_USER_ID:
+                        people_ids.append({"id": DEFAULT_USER_ID})
+                    elif pid and pid != "dummy-user":
+                        people_ids.append({"id": pid})
+                if people_ids:
+                    props[key] = {"people": people_ids}
             elif ptype == "relation":
                 ids = value if isinstance(value, list) else [value]
                 props[key] = {"relation": [{"id": i} for i in ids]}
             else:
                 if isinstance(value, list) and value and value[0].get("object") == "user":
-                    props[key] = {"people": value}
+                    people_ids = []
+                    for person in value:
+                        pid = person.get("id")
+                        if pid == "dummy-user" and DEFAULT_USER_ID:
+                            people_ids.append({"id": DEFAULT_USER_ID})
+                        elif pid and pid != "dummy-user":
+                            people_ids.append({"id": pid})
+                    if people_ids:
+                        props[key] = {"people": people_ids}
                 elif isinstance(value, str):
                     props[key] = {"rich_text": [{"text": {"content": value}}]}
         notion.pages.create(parent={"database_id": db_id}, properties=props)

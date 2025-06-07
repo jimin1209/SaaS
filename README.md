@@ -23,6 +23,8 @@ main.py            - entry point using the above modules
    `SLACK_ERROR_WEBHOOK_URL`에 각각 기본 로그용과 에러 알림용 웹훅 주소를 설정하세요.
    If `NOTION_TOKEN` is not provided the script logs a warning and exits
    without touching Notion, which is useful for CI runs.
+   더미 데이터를 위해 사람 속성이 필요한 경우 `DEFAULT_USER_ID`에
+   사용할 노션 사용자 ID를 입력합니다. 값이 없으면 해당 컬럼은 생략됩니다.
 4. Relation columns can specify a `target_template` value. Databases are
    created first and then these relations are automatically added in a second
    step once the target database IDs are known.
