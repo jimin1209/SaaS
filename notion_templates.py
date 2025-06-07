@@ -9,7 +9,7 @@ DATABASE_TEMPLATES = [
             "이름": {"rich_text": {}},
             "부서": {"select": {}},
             "직급": {"select": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -23,7 +23,7 @@ DATABASE_TEMPLATES = [
             "요청일": {"date": {}},
             "요청월": {"select": {}},
             "요청자": {"people": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
             "첨부파일": {"files": {}},
         },
     },
@@ -36,7 +36,7 @@ DATABASE_TEMPLATES = [
             "출장지": {"rich_text": {}},
             "출장기간": {"date": {}},
             "출장목적": {"rich_text": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -48,7 +48,7 @@ DATABASE_TEMPLATES = [
             "휴가시작": {"date": {}},
             "휴가종료": {"date": {}},
             "휴가유형": {"select": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -59,7 +59,7 @@ DATABASE_TEMPLATES = [
             "수강생": {"people": {}},
             "교육명": {"rich_text": {}},
             "교육일": {"date": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
     {
@@ -69,7 +69,7 @@ DATABASE_TEMPLATES = [
             "제목": {"title": {}},
             "시작일": {"date": {}},
             "종료일": {"date": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
             "설명": {"rich_text": {}},
         },
     },
@@ -81,7 +81,7 @@ DATABASE_TEMPLATES = [
             # Relation target will be filled after all databases are created
             "관련 요청": {"relation": {}, "target_template": "출장 요청서"},
             "첨부파일": {"files": {}},
-            "상태": {"status": {}},
+            "상태": {"select": {}},
         },
     },
 ]
