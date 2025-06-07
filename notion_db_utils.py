@@ -81,7 +81,6 @@ async def create_dummy_data(db_id: str, template_title: str) -> None:
         notion.pages.create(parent={"database_id": db_id}, properties=props)
     log.info("Inserted %d dummy rows", len(items))
 
-
 def add_relation_columns(db_id_map: Dict[str, str]) -> None:
     """Update databases with relation properties once all IDs are known."""
     if not notion:
