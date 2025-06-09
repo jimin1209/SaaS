@@ -41,3 +41,33 @@ def create_event(summary: str, start: str, end: str, description: str = "") -> N
         log.info("캘린더 이벤트 생성: %s", summary)
     except Exception as exc:  # pragma: no cover - network issues
         log.error("캘린더 이벤트 생성 실패 %s: %s", summary, exc)
+
+
+def update_event(
+    event_id: str,
+    *,
+    summary: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
+    description: str | None = None,
+) -> None:
+    """Update an existing calendar event."""
+    if not _service:
+        log.debug("구글 캘린더 서비스 사용 불가")
+        return
+    body: dict = {}
+    if summary:
+        body["summary"] = summary
+    if start:
+        body.setdefault("start", {})["date"] = start
+    if end:
+        body.setdefault("end", {})["date"] = end
+    if description is not None:
+        body["description"] = description
+    try:
+        _service.events().patch(
+            calendarId=GOOGLE_CALENDAR_ID, eventId=event_id, body=body
+        ).execute()
+        log.info("캘린더 이벤트 업데이트: %s", event_id)
+    except Exception as exc:  # pragma: no cover - network issues
+        log.error("캘린더 이벤트 업데이트 실패 %s: %s", event_id, exc)

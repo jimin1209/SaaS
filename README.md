@@ -57,6 +57,21 @@ create_event("회의", "2024-10-01", "2024-10-01", "월간 회의")
 
 실행 후 구글 캘린더에서 이벤트가 정상적으로 생성됐는지 확인하세요.
 
+## 회사 일정 동기화
+`.env` 파일의 `GOOGLE_CALENDAR_ID` 값을 실제 회사 캘린더 주소인
+`jimin@nextsolarize.com`으로 설정합니다. `calendar_sync.sync_notion_calendar`
+함수를 사용하면 노션 DB에 저장된 "회사 일정 캘린더" 내용을 구글 캘린더에
+일괄 등록할 수 있습니다.
+
+```python
+from calendar_sync import sync_notion_calendar
+
+sync_notion_calendar("<노션 DB ID>")
+```
+
+구글 캘린더 화면을 바로 노션 페이지에 띄우고 싶다면 캘린더 웹에서 iframe 주소를
+복사해 노션에서 `/embed` 블록에 붙여 넣으면 됩니다.
+
 ## 윈도우 서비스로 실행하기
 1. [nssm](https://nssm.cc/)을 설치합니다.
 2. 다음 명령으로 서비스를 등록합니다.
